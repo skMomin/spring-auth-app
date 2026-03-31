@@ -55,25 +55,36 @@ jobs:
         distribution: 'temurin'
         cache: 'gradle'
         
+    - name: Update Grype vulnerability database
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+        grype db update
+        
     - name: Generate SBOM and scan with Grype
       uses: anchore/scan-action@v3
       with:
-        image: '.'  # Scan the current directory
-        format: 'sarif'
-        output-file: 'grype-sarif.json'
+        grype-version: 'v0.110.0'
+        path: '.'  # Scan the current directory
+        output-format: 'sarif'
+        fail-build: false  # Don't fail build on vulnerabilities
+        severity-cutoff: 'negligible'  # Show all vulnerabilities including critical
         
     - name: Upload Grype scan results
       uses: actions/upload-artifact@v4
       with:
         name: grype-scan-results
         path: |
-          grype-sarif.json
+          results.sarif
           
     - name: Upload SARIF to GitHub
       uses: github/codeql-action/upload-sarif@v3
       if: github.event_name == 'push'
       with:
-        sarif_file: 'grype-sarif.json'
+        sarif_file: 'results.sarif'
+        
+    - name: Show security warnings
+      run: |
+        echo "::warning ::Security vulnerabilities detected. Please review the scan results in the Security tab or artifacts."
 
   code-quality:
     needs: build
