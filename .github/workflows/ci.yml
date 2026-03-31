@@ -55,32 +55,25 @@ jobs:
         distribution: 'temurin'
         cache: 'gradle'
         
-    - name: Generate SBOM
-      uses: anchore/sbom-action@v0
+    - name: Generate SBOM and scan with Grype
+      uses: anchore/scan-action@v3
       with:
-        format: 'cyclonedx-json'
-        output-file: 'sbom.cdx.json'
-        
-    - name: Scan with Grype
-      uses: anchore/grype-action@v0
-      with:
-        sbom: 'sbom.cdx.json'
+        image: '.'  # Scan the current directory
         format: 'sarif'
-        output: 'grype.sarif.json'
+        output-file: 'grype-sarif.json'
         
     - name: Upload Grype scan results
       uses: actions/upload-artifact@v4
       with:
         name: grype-scan-results
         path: |
-          grype.sarif.json
-          sbom.cdx.json
+          grype-sarif.json
           
     - name: Upload SARIF to GitHub
       uses: github/codeql-action/upload-sarif@v3
       if: github.event_name == 'push'
       with:
-        sarif_file: 'grype.sarif.json'
+        sarif_file: 'grype-sarif.json'
 
   code-quality:
     needs: build
