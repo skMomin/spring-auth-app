@@ -72,8 +72,12 @@ jobs:
       
     - name: Update Grype vulnerability database
       run: |
-        curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
-        grype db update
+        # Install Grype CLI if not already available
+        if ! command -v grype &> /dev/null; then
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+        fi
+        # Update vulnerability database
+        grype db update || echo "Database update failed, proceeding with existing database"
         
     - name: Scan built image with Grype
       uses: anchore/scan-action@v3
