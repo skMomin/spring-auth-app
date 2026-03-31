@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  JAVA_VERSION: '17'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: 'gradle'
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build with Gradle
+      run: ./gradlew build -x test
+      
+    - name: Run tests
+      run: ./gradlew test
+      
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: build/test-results/test/
+
+  security-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: 'gradle'
+        
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        format: 'cyclonedx-json'
+        output-file: 'sbom.cdx.json'
+        
+    - name: Scan with Grype
+      uses: anchore/grype-action@v0
+      with:
+        sbom: 'sbom.cdx.json'
+        format: 'sarif'
+        output: 'grype.sarif.json'
+        
+    - name: Upload Grype scan results
+      uses: actions/upload-artifact@v4
+      with:
+        name: grype-scan-results
+        path: |
+          grype.sarif.json
+          sbom.cdx.json
+          
+    - name: Upload SARIF to GitHub
+      uses: github/codeql-action/upload-sarif@v3
+      if: github.event_name == 'push'
+      with:
+        sarif_file: 'grype.sarif.json'
+
+  code-quality:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Java ${{ env.JAVA_VERSION }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ env.JAVA_VERSION }}
+        distribution: 'temurin'
+        cache: 'gradle'
+        
+    - name: Run SpotBugs
+      run: ./gradlew spotbugsMain
+      
+    - name: Upload SpotBugs results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: spotbugs-results
+        path: build/reports/spotbugs/main/

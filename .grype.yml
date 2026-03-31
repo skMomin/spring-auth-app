@@ -1,0 +1,126 @@
+# Grype Configuration
+# Documentation: https://github.com/anchore/grype
+
+# Vulnerability matching configuration
+match:
+  # Exclude specific vulnerabilities by ID
+  exclude:
+    - vulnerability: GHSA-xxxx-xxxx-xxxx
+      # Add reason for exclusion
+      reason: "False positive - not applicable to this context"
+
+  # Apply rules based on package type, namespace, or version
+  # Note: Grype will continue to scan these but will not report them
+  ignore:
+    # Ignore vulnerabilities in specific packages
+    - package:
+        name: "log4j-core"
+        version: "2.17.1"
+        type: "java-archive"
+      vulnerability: "CVE-2021-44228"
+
+# SBOM generation configuration (when used with Syft)
+sbom:
+  # SBOM format to use for scanning
+  format: "cyclonedx-json"
+  
+  # Exclude certain types of files from SBOM generation
+  exclude:
+    - "**/test/**"
+    - "**/*.test"
+    - "**/*.spec"
+    - "**/node_modules/**"
+
+# Vulnerability database configuration
+db:
+  # URL for the vulnerability database
+  # Default: https://github.com/anchore/grype-db/releases/latest/download/vulnerability-db.tar.gz
+  # You can specify a custom database URL here if needed
+  # url: "https://your-custom-db-url/vulnerability-db.tar.gz"
+  
+  # Cache configuration
+  cache-dir: "~/.cache/grype/db"
+  
+  # Auto-update the database before scanning
+  auto-update: true
+
+# Output configuration
+output:
+  # Default output format
+  format: "table"
+  
+  # When using SARIF output, configure GitHub-specific settings
+  sarif:
+    # Include remediation information
+    include-remediation: true
+    
+    # Include vulnerability descriptions
+    include-description: true
+    
+    # Include severity information
+    include-severity: true
+    
+    # Include package information
+    include-package: true
+    
+    # Include CVE references
+    include-references: true
+
+# Severity configuration
+severity:
+  # Define severity thresholds
+  # Values: critical, high, medium, low, negligible
+  critical:
+    # Fail the scan on critical vulnerabilities
+    fail-on-severity: true
+    
+  high:
+    # Warn on high vulnerabilities (optional)
+    warn-on-severity: false
+    
+  medium:
+    # Only report medium and above (optional)
+    report-above: false
+
+# Source configuration
+# This tells Grype where to look for vulnerabilities
+sources:
+  # Enable/disable specific vulnerability sources
+  nvd:
+    enabled: true
+    # NVD API key (for rate limiting)
+    # api-key: ${NVD_API_KEY}
+    
+  github:
+    enabled: true
+    # GitHub token for private repositories
+    # token: ${GITHUB_TOKEN}
+    
+  vulndb:
+    enabled: true
+    
+  osv:
+    enabled: true
+
+# Ignore specific vulnerability types
+ignore-types:
+  - "malicious-package"
+  - "invalid-data"
+  - "removed"
+
+# License configuration (for license scanning)
+license:
+  # Enable/disable license scanning
+  enabled: false
+  
+  # License policy configuration
+  allow:
+    - "MIT"
+    - "Apache-2.0"
+    - "BSD-3-Clause"
+    
+  deny:
+    - "GPL-3.0"
+    - "AGPL-3.0"
+    
+  warn-on: "unknown"
