@@ -74,8 +74,7 @@ jobs:
       uses: anchore/scan-action@v3
       with:
         image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
-        format: 'sarif'
-        output-file: 'grype-image-sarif.json'
+        output-format: 'sarif'
         fail-build: false  # Don't fail build on vulnerabilities
         severity-cutoff: 'negligible'  # Show all vulnerabilities
         
@@ -85,14 +84,14 @@ jobs:
       with:
         name: grype-scan-results
         path: |
-          grype-image-sarif.json
+          results.sarif
         retention-days: 30
         
     - name: Upload SARIF to GitHub Advanced Security
       if: github.event_name == 'push'
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: 'grype-image-sarif.json'
+        sarif_file: 'results.sarif'
         
     - name: Show security warnings
       run: |
@@ -120,14 +119,14 @@ jobs:
         echo "- Digest: ${{ needs.build-and-push.outputs.digest }}" >> security-report.md
         echo "" >> security-report.md
         
-        if [ -f "scan-results/grype-scan-results/grype-image-sarif.json" ]; then
+        if [ -f "scan-results/grype-scan-results/results.sarif" ]; then
           echo "## ⚠️ Security Vulnerabilities Detected" >> security-report.md
           echo "" >> security-report.md
           
           # Count vulnerabilities by severity
-          CRITICAL_COUNT=$(jq '.runs[0].results | map(select(.rule.level == "error")) | length' scan-results/grype-scan-results/grype-image-sarif.json 2>/dev/null || echo 0)
-          HIGH_COUNT=$(jq '.runs[0].results | map(select(.rule.level == "warning")) | length' scan-results/grype-scan-results/grype-image-sarif.json 2>/dev/null || echo 0)
-          MEDIUM_COUNT=$(jq '.runs[0].results | map(select(.rule.level == "note")) | length' scan-results/grype-scan-results/grype-image-sarif.json 2>/dev/null || echo 0)
+          CRITICAL_COUNT=$(jq '.runs[0].results | map(select(.rule.level == "error")) | length' scan-results/grype-scan-results/results.sarif 2>/dev/null || echo 0)
+          HIGH_COUNT=$(jq '.runs[0].results | map(select(.rule.level == "warning")) | length' scan-results/grype-scan-results/results.sarif 2>/dev/null || echo 0)
+          MEDIUM_COUNT=$(jq '.runs[0].results | map(select(.rule.level == "note")) | length' scan-results/grype-scan-results/results.sarif 2>/dev/null || echo 0)
           
           echo "### 🔴 Critical: $CRITICAL_COUNT" >> security-report.md
           echo "### 🟡 High: $HIGH_COUNT" >> security-report.md
@@ -154,7 +153,7 @@ jobs:
           
           echo "### 📋 Top 5 Vulnerabilities" >> security-report.md
           echo "" >> security-report.md
-          jq -r '.runs[0].results[0:5] | .[] | "- \(.rule.id): \(.message.text)"' scan-results/grype-scan-results/grype-image-sarif.json 2>/dev/null >> security-report.md || echo "No detailed vulnerability information available." >> security-report.md
+          jq -r '.runs[0].results[0:5] | .[] | "- \(.rule.id): \(.message.text)"' scan-results/grype-scan-results/results.sarif 2>/dev/null >> security-report.md || echo "No detailed vulnerability information available." >> security-report.md
           
         else
           echo "## ✅ No Security Scan Results Found" >> security-report.md
