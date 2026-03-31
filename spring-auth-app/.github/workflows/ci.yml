@@ -63,6 +63,7 @@ jobs:
     - name: Generate SBOM and scan with Grype
       uses: anchore/scan-action@v3
       with:
+        grype-version: 'v0.110.0'
         path: '.'  # Scan the current directory
         output-format: 'sarif'
         fail-build: false  # Don't fail build on vulnerabilities

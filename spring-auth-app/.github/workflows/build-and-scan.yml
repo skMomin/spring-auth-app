@@ -78,6 +78,7 @@ jobs:
     - name: Scan built image with Grype
       uses: anchore/scan-action@v3
       with:
+        grype-version: 'v0.110.0'
         image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-and-push.outputs.digest }}
         output-format: 'sarif'
         fail-build: false  # Don't fail build on vulnerabilities
