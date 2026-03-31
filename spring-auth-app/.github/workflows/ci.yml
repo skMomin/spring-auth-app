@@ -55,6 +55,11 @@ jobs:
         distribution: 'temurin'
         cache: 'gradle'
         
+    - name: Update Grype vulnerability database
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+        grype db update
+        
     - name: Generate SBOM and scan with Grype
       uses: anchore/scan-action@v3
       with:

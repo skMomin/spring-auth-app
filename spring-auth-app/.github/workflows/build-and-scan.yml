@@ -70,6 +70,11 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       
+    - name: Update Grype vulnerability database
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+        grype db update
+        
     - name: Scan built image with Grype
       uses: anchore/scan-action@v3
       with:
