@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/spring_auth}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  flyway:
+    enabled: true
+  jooq:
+    sql-dialect: POSTGRES
+app:
+  auth:
+    jwt-secret: ${APP_AUTH_JWT_SECRET:change-this-secret-in-real-environments}
+    access-token-ttl: PT15M
+    refresh-token-ttl: P30D
+
+server:
+  shutdown: graceful
